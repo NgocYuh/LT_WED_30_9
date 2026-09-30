@@ -1,0 +1,9 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; }
+body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #eef2ff; }
+.card { width: min(28rem, calc(100% - 3rem)); padding: 2rem; border-radius: 1rem; background: white; box-shadow: 0 1rem 3rem #1e293b22; }
+form { display: grid; gap: .75rem; }
+input, button { padding: .75rem; font: inherit; }
+button { margin-top: .5rem; cursor: pointer; color: white; background: #4338ca; border: 0; border-radius: .5rem; }
+dl { display: grid; grid-template-columns: 6rem 1fr; gap: .75rem; }
+dt { font-weight: 700; }
+#message { color: #b91c1c; }
