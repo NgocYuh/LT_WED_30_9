@@ -1,6 +1,6 @@
 # Bài tập JWT - Spring Boot 3 / Spring Security 6
 
-Ứng dụng thực hiện đầy đủ luồng trong bài giảng `04_JWT.pdf`: đăng ký, đăng nhập nhận JWT, filter đọc Bearer token, xem hồ sơ, liệt kê người dùng và giao diện AJAX. Phiên bản ở commit giai đoạn 1 dùng **JJWT 0.12.6**.
+Ứng dụng thực hiện đầy đủ luồng trong bài giảng `04_JWT.pdf`: đăng ký, đăng nhập nhận JWT, filter đọc Bearer token, xem hồ sơ, liệt kê người dùng và giao diện AJAX. Phiên bản hiện tại dùng **Nimbus JOSE + JWT 9.37.3**; phiên bản JJWT 0.12.6 vẫn xem được ở commit giai đoạn 1.
 
 ## Yêu cầu
 
@@ -66,3 +66,5 @@ mvn clean package
 ```
 
 Test tích hợp dùng H2 riêng, không chạm vào MySQL, và kiểm tra: đăng ký -> đăng nhập -> `/users/me`, quyền `/users`, không rò rỉ password/hash, sai mật khẩu, thiếu token, token lỗi, sai chữ ký và token hết hạn.
+
+Nimbus chỉ chấp nhận đúng thuật toán `HS256`, xác minh chữ ký trước, rồi mới kiểm tra `exp` và đọc `sub`. API, Bearer header, claims và thời hạn giữ nguyên so với phiên bản JJWT.

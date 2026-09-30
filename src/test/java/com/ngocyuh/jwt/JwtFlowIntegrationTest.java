@@ -2,12 +2,15 @@ package com.ngocyuh.jwt;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import com.ngocyuh.jwt.entity.Role;
 import com.ngocyuh.jwt.entity.User;
 import com.ngocyuh.jwt.repository.UserRepository;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,16 +93,15 @@ class JwtFlowIntegrationTest {
         mockMvc.perform(get("/users/me").header("Authorization", "Bearer not-a-jwt"))
                 .andExpect(status().isUnauthorized());
 
-        String wrongSignature = Jwts.builder().subject("student@example.com")
-                .expiration(Date.from(Instant.now().plusSeconds(60)))
-                .signWith(Keys.hmacShaKeyFor(new byte[32]), Jwts.SIG.HS256).compact();
+        String wrongSignature = signedToken(new byte[32], Instant.now().plusSeconds(60));
         mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + wrongSignature))
                 .andExpect(status().isUnauthorized());
 
-        String expired = Jwts.builder().subject("student@example.com")
-                .issuedAt(Date.from(Instant.now().minusSeconds(120)))
-                .expiration(Date.from(Instant.now().minusSeconds(60)))
-                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET)), Jwts.SIG.HS256).compact();
+        String wrongAlgorithm = signedToken(new byte[48], Instant.now().plusSeconds(60), JWSAlgorithm.HS384);
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + wrongAlgorithm))
+                .andExpect(status().isUnauthorized());
+
+        String expired = signedToken(Base64.getDecoder().decode(SECRET), Instant.now().minusSeconds(60));
         mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + expired))
                 .andExpect(status().isUnauthorized());
     }
@@ -123,6 +126,22 @@ class JwtFlowIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         JsonNode json = objectMapper.readTree(response);
         return json.get("token").asText();
+    }
+
+    private String signedToken(byte[] secret, Instant expiration) throws Exception {
+        return signedToken(secret, expiration, JWSAlgorithm.HS256);
+    }
+
+    private String signedToken(byte[] secret, Instant expiration, JWSAlgorithm algorithm) throws Exception {
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .subject("student@example.com")
+                .issueTime(Date.from(expiration.minusSeconds(60)))
+                .expirationTime(Date.from(expiration))
+                .build();
+        SignedJWT jwt = new SignedJWT(
+                new JWSHeader.Builder(algorithm).type(JOSEObjectType.JWT).build(), claims);
+        jwt.sign(new MACSigner(secret));
+        return jwt.serialize();
     }
 
     private record Credentials(String email, String password) {}
