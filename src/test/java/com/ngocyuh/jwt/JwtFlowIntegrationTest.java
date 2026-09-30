@@ -117,6 +117,18 @@ class JwtFlowIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void ajaxPagesAndScriptArePublicWhileProfileApiRemainsProtected() throws Exception {
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/user/profile"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/js/main.js"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/users/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
     private String login(String email, String password) throws Exception {
         String response = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
